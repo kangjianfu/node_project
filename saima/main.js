@@ -20,11 +20,6 @@ app.get("/video",router.video_paly);
 app.get("/login",router.login);
 
 app.get("/save/user/info/:name/:pwd",router.save_users);
-app.get("/save/user/login/status",router.save_user_login_status);
-
-app.get("/dj/user/:name/:pwd",router.dj_user);
-app.get("/ok/user/:name/:pwd",router.ok_user);
-app.get("/stop/user/:name/:pwd",router.stop_user);
 //冻结用户
 app.get("/frozen/user/:id",router.frozen_user);
 //解冻用户
