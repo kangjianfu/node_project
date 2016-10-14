@@ -198,104 +198,6 @@ module.exports.close_page=function(req,res){
     res.json({ret:0})
 }
 
-module.exports.save_user_login_status=function(req,res){
-var  client = redis.createClient(6179, "120.27.51.170");
-    var user_info=req.cookies;
-    if(user_info.name){
-        client.get(user_info.name, function(err, reply){
-            if(err){
-                res.json({ret:1})
-            }
-            //如果密码正确
-            if(reply){
-                var dl_key=user_info.name+"_dlkang";
-                client.set(dl_key, user_info.pwd, function(err, reply){
-                    if(err){
-                        console.info("缓存登录信息失败");
-                        res.json({ret:1})
-                    }
-                    if(reply){
-                        console.info("缓存登录信息成功");
-                        res.json({ret:0})
-                    }
-                });
-                client.expire(dl_key,10);
-            }else{
-                res.json({ret:1})
-            }
-        });
-
-    }
-};
-//冻结
-module.exports.dj_user=function(req,res){
-    var user_name=req.params.name;
-    var pwd=req.params.pwd;
-    var  client = redis.createClient(6179, "120.27.51.170");
-    client.del(user_name, function(err, reply){
-        if(err){
-            res.json({ret:1})
-        }
-        if(reply){
-            client.set(user_name+"_dj", pwd, function(err2, reply1){
-                if(err2){
-                    res.json({ret:1})
-                }
-                if(reply1){
-                    res.json({ret:0})
-                }
-            });
-        }
-
-    });
-}
-
-//冻结
-module.exports.stop_user=function(req,res){
-    var user_name=req.params.name;
-    var user_name1=user_name.substr(0,user_name.indexOf("_dlkang"));
-    var pwd=req.params.pwd;
-    var  client = redis.createClient(6179, "120.27.51.170");
-    client.del(user_name1, function(err, reply){
-        if(err){
-            res.json({ret:1})
-        }
-        if(reply){
-            client.set(user_name1+"_dj", pwd, function(err2, reply1){
-                if(err2){
-                    res.json({ret:1})
-                }
-                if(reply1){
-                    res.json({ret:0})
-                }
-            });
-        }
-
-    });
-}
-//释放
-module.exports.ok_user=function(req,res){
-    var user_name=req.params.name;
-    var pwd=req.params.pwd;
-    var  client = redis.createClient(6179, "120.27.51.170");
-    client.del(user_name, function(err, reply){
-        if(err){
-            res.json({ret:1})
-        }
-        if(reply){
-            client.set(user_name.substr(0,user_name.lastIndexOf("_dj")), pwd, function(err2, reply1){
-                if(err2){
-                    res.json({ret:1})
-                }
-                if(reply1){
-                    res.json({ret:0})
-                }
-            });
-        }
-
-    });
-}
-
 
 //获取某个表中数据的总数量
 function getCount(tableName,callbck){
@@ -382,27 +284,6 @@ module.exports.unfrozen_user=function(req,res){
         res.json({ret:1});
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Date.prototype.Format = function (fmt) { //author: meizz
     var o = {
