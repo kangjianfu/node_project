@@ -1,0 +1,67 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script  type="text/javascript" src="/js/jquery.1.7.2.min.js" ></script>
+    <link rel="stylesheet" type="text/css" href="js/jquery-easyui-1.4.1/themes/default/easyui.css" />
+    <link rel="stylesheet" type="text/css" href="js/jquery-easyui-1.4.1/themes/icon.css" />
+    <link rel="stylesheet" type="text/css" href="css/taotao.css" />
+    <script type="text/javascript" src="js/jquery-easyui-1.4.1/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery-easyui-1.4.1/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="js/jquery-easyui-1.4.1/locale/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="js/common.js"></script>
+    <title>LOGIN</title>
+</head>
+<body style="background-image:url('http://o7y189er1.bkt.clouddn.com/87.jpg')">
+<div>
+    <br>
+    <br>
+    <br>
+    <h1 style="color: #a94442;text-align: center"><img src="http://o7y189er1.bkt.clouddn.com/phone3.png" /> 12313123123123</h1>
+</div>
+<form method="GET" id="tj">
+
+
+<div class="easyui-dialog" title="user_login" data-options="closable:false,draggable:false" style="width:400px;height:300px;padding:10px;">
+    <div style="margin-left: 50px;margin-top: 50px;">
+        <div style="margin-bottom:20px;">
+            <div>
+                ID: <input name="username" class="easyui-textbox" data-options="required:true" style="width:200px;height:32px" placeholder="in user id" value=""/>
+            </div>
+        </div>
+        <div style="margin-bottom:20px">
+            <div>
+                PWD: <input name="password" class="easyui-textbox" type="password" style="width:200px;height:32px" data-options=""  placeholder="in user id" value=""/>
+            </div>
+        </div>
+        <div>
+
+            <p style="font-size: 15px;color: red"><%=msg%></p>
+            <br/>
+            <a id="login" class="easyui-linkbutton" iconCls="icon-ok"  style="width:100px;height:32px;margin-left: 50px">LOGIN</a>
+        </div>
+    </div>
+</div>
+</form>
+<script type="text/javascript">
+//    $("#login").click(function(){
+//       // var username = $("[name=username]").val();
+//       // var password = $("[name=password]").val()
+//        $("#tj").submit();
+//    })
+    $("#login").click(function(){
+        var username = $("[name=username]").val();
+        var password = $("[name=password]").val();
+
+        $.getJSON("/check/login",{name:username,pwd:password},function(data){
+            if(data.ret==0){
+                window.location.href=data.url+"?user_id="+data.user_id;
+            }else{
+                $.messager.alert('错误',"用户名密码不正确！");
+                return ;
+            }
+        })
+
+    });
+</script>
+</body>
+</html>

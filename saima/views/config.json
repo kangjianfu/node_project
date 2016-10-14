@@ -1,0 +1,7 @@
+{
+  "host":"rm-2zex4aqv5m20rj4ibo.mysql.rds.aliyuncs.com",
+ "port":3306,
+  "user": "yunshi",
+ "password": "zFpVu4JmPZSIfbL",
+  "database": "saima"
+}

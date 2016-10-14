@@ -1,0 +1,244 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body >
+<div style="height: 80%">
+    <div  id="itemList" style="height: 80%" ></div>
+</div>
+</table>
+<div id="itemEditWindow" class="easyui-window" title="编辑商品" data-options="modal:true,closed:true,iconCls:'icon-save',href:'/rest/page/item-edit'" style="width:80%;height:80%;padding:10px;">
+</div>
+<script>
+    var dataGrid;
+    $(function(){
+        dataGrid = $('#itemList').datagrid({
+            url : '/user/list/json',
+            method:'get',
+            fit : true,
+            fitColumns : true,
+            border : true,
+            pagination : true,
+            idField : 'ck',
+            pageSize : 10,
+            pageList : [ 10, 20],
+            singleSelect:true,
+            columns : [ [  {
+                field : 'id',
+                title : '编号',
+                width : 5,
+                checkbox : true
+            },  {
+                field : 'name',
+                title : '登录名称',
+                width : 50,
+            },{
+                field : 'password',
+                title : '密码',
+                width : 50,
+            },{
+                field : 'create_time',
+                title : '添加时间',
+                width : 50,
+                formatter:function(value,row,index){
+                  return new Date(value).format("yyyy-MM-dd hh:mm:ss");
+                }
+            },{
+                field : 'type',
+                title : '用户属性',
+                width : 50,
+                formatter : function(value, row, index) {
+                    if(row.type==1){
+                        return "<span style='color: #0000FF'>正常 【可以登录】</span>"
+                    }else{
+                      return "<span style='color: #a52a2a' >已冻结 【不可以登录】</span>"
+                    }
+                }
+            }, {
+                field : 'status',
+                title : '状态',
+                width : 50,
+                formatter : function(value, row, index) {
+                    if(row.status==1){
+                        return "<span style='color: #00ee00'>未登录</span>"
+                    }else{
+                        return "<span style='color: red'>已登录 【正在看】</span>"
+                    }
+                }
+            },{
+                field : 'action',
+                title : '操作',
+                width : 50,
+                formatter : function(value, row, index) {
+                    var str=""
+                    if(row.type==1 && row.status==1){
+                        str+="<button style='background-color:red' onclick='frozen_user(\""+row.id+"\")'>冻结</button>"
+                    }else if(row.type==1 && row.status==2) {
+                        str+="&nbsp;&nbsp;<button style='background-color:chartreuse' onclick='stop_andFrozen_user(\""+row.id+"\")'>下线并冻结</button>";
+                    }else if(row.type==2){
+                        str+="<button style='background-color:chartreuse' onclick='un_frozen_user(\""+row.id+"\")'>解冻</button>"
+                    }else{
+                        str+=" "
+                    };
+                    str+="&nbsp;&nbsp;<button style='background-color:#3B91D7' onclick='delete_user(\""+row.id+"\")'>删除</button>";
+                    return str;
+                }
+            }] ],
+            toolbar : [{
+                text:'新增',
+                iconCls:'icon-add',
+                handler:function(){
+                    var add_user= $('<div/>').dialog({
+                        title: '添加用户',
+                        width: 400,
+                        height: 200,
+                        closed: false,
+                        cache: false,
+                        content: '<div style="padding: 5px"><p>用户名：<input type="text" id="user_name"/></p><p>密&nbsp;码：<input type="text" id="user_pwd"/></p></div>',
+                        modal: true,
+                        buttons:[{
+                            text:'保存',
+                            iconCls:'icon-save',
+                            handler:function(){
+                                var name=$("#user_name").val()
+                                var pwd=$("#user_pwd").val();
+                                if(!name){
+                                    $.messager.alert('错误',"用户名不能为空！");
+                                    return;
+                                }
+                                if(!pwd){
+                                    $.messager.alert('错误',"密码不能为空！");
+                                    return;
+                                }
+                                $.getJSON("/save/user/info/"+name+"/"+pwd,{},function(data){
+                                    if(data.ret==0){
+                                        $.messager.alert('成功',"用户名添加成功！");
+                                        $("#itemList").datagrid('reload');
+                                        $("#itemList").datagrid("unselectAll")
+                                        $(add_user).dialog('destroy');
+                                    }else{
+                                        $.messager.alert('错误',"用户名密码不正确！");
+                                    }
+                                })
+                            }
+                        },{
+                            text:'取消',
+                            iconCls:'icon-cancel',
+                            handler:function(){
+                                $(add_user).dialog('destroy');
+                            }
+                        }]
+                    });
+                    //$(".tree-title:contains('新增商品')").parent().click();
+                }
+            }]
+        })
+    })
+
+
+    //冻结用户
+    function frozen_user(id){
+       if(id){
+           $.messager.confirm('确认','你确认要冻结该用户吗?冻结后用不能登录。',function(r){
+               if (r){
+                   $.getJSON("/frozen/user/"+id,{}, function(data){
+                       if(data.ret == 0){
+                           $.messager.alert('提示','用户冻结成功!',undefined,function(){
+                               $("#itemList").datagrid("reload");
+                               $("#itemList").datagrid("unselectAll")
+                           });
+                       }else{
+                           $.messager.alert('提示','用户冻结失败!');
+                       }
+                   });
+               }
+           });
+       }else{
+           alert("参数不能为空")
+       }
+
+    }
+
+    //冻结用户
+    function un_frozen_user(id){
+        if(id){
+            $.messager.confirm('确认','你确认要打开该用户吗?打开后用户可以正常使用。',function(r){
+                if (r){
+                    $.getJSON("/unfrozen/user/"+id,null, function(data){
+                        if(data.ret == 0){
+                            $.messager.alert('提示','用户打开成功!',undefined,function(){
+                                $("#itemList").datagrid("reload");
+                                $("#itemList").datagrid("unselectAll")
+                            });
+                        }else{
+                            $.messager.alert('提示','用户打开失败!');
+                        }
+                    });
+                }
+            });
+        }else{
+            alert("参数不能为空")
+        }
+
+    };
+
+    function delete_user(id){
+        if(id){
+            $.messager.confirm('确认','你确认要删除该用户吗？删除后用户将不存在。',function(r){
+                if (r){
+                    $.getJSON("/delete/user/"+id,null, function(data){
+                        if(data.ret == 0){
+                            $.messager.alert('提示','删除成功!',undefined,function(){
+                                $("#itemList").datagrid("reload");
+                                $("#itemList").datagrid("unselectAll")
+                            });
+                        }else{
+                            $.messager.alert('提示','网络异常，删除失败!');
+                        }
+                    });
+                }
+            });
+        }else{
+            alert("参数不能为空")
+        }
+    }
+
+
+
+    function getSelectionsIds(){
+        var itemList = $("#itemList");
+        var sels = itemList.datagrid("getSelections");
+        var ids = [];
+        for(var i in sels){
+            ids.push(sels[i].name);
+        }
+        ids = ids.join(",");
+        return ids;
+    }
+
+    function getData(){
+        $('#itemList').datagrid("reload");
+        $("#itemList").datagrid("unselectAll")
+    }
+
+
+
+    Date.prototype.Format = function (fmt) { //author: meizz
+        var o = {
+            "M+": this.getMonth() + 1, //月份
+            "d+": this.getDate(), //日
+            "h+": this.getHours(), //小时
+            "m+": this.getMinutes(), //分
+            "s+": this.getSeconds(), //秒
+            "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+            "S": this.getMilliseconds() //毫秒
+        };
+        if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+        for (var k in o)
+            if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+        return fmt;
+    }
+   // setInterval("getData()", 10000)
+</script>
+</body>
+</html>

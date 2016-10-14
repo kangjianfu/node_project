@@ -1,0 +1,759 @@
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商城</title>
+    <link href="./css/bootstrap.css" rel="stylesheet" media="screen">
+    <link href="./css/bootstrap-responsive.min.css" rel="stylesheet">
+    <script src="./js/jquery.js" type="text/javascript"></script>
+    <script src="./js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./js/swfobject.js"></script>
+    <script type="text/javascript" src="./js/recorder.js"></script>
+    <script type="text/javascript" src="./js/main4recorder.js"></script>
+    <script type="text/javascript" src="./js/hmac-sha256.js"></script>
+    <script type="text/javascript" src="http://cdn.staticfile.org/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+    <script type="text/javascript" src="http://cdn.staticfile.org/socket.io/1.3.7/socket.io.min.js"></script>
+
+
+    <script type="text/javascript">
+        (function($){
+            $.getUrlParam = function(name)
+            {
+                var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+                var r = window.location.search.substr(1).match(reg);
+                if (r!=null) return unescape(r[2]); return null;
+            }
+
+
+        })(jQuery);
+
+        var is_console= "true" == $.getUrlParam('console');
+        var is_ios = /(iPhone|iPod|iPad).*AppleWebKit.*Safari/i.test(navigator.userAgent);
+        var QUERY_KEY='abc';
+        var TASK_ACTION_KEY='def';
+        var SEND_MESSAGE_KEY='abc';
+
+        $(function() {
+            var gain = $('#gain')[0];
+            var silenceLevel = $('#silenceLevel')[0];
+            for(var i=0; i<=100; i++) {
+                gain.options[gain.options.length] = new Option(100-i);
+                silenceLevel.options[silenceLevel.options.length] = new Option(i);
+            }
+
+            var appWidth = 24;
+            var appHeight = 24;
+            var flashvars = {'upload_image': 'http://52.78.115.124/xvs-api-js-demo/images/record.png'};
+            var params = {};
+            var attributes = {'id': "recorderApp", 'name':  "recorderApp"};
+            swfobject.embedSWF("http://52.78.115.124/xvs-api-js-demo/swf/recorder.swf", "flashcontent", appWidth, appHeight, "11.0.0", "", flashvars, params, attributes);
+        });
+
+        function configureMicrophone() {
+            if(! FWRecorder.isReady) {
+                return;
+            }
+
+            FWRecorder.configure($('#rate').val(), $('#gain').val(), $('#silenceLevel').val(), $('#silenceTimeout').val());
+            FWRecorder.setUseEchoSuppression($('#useEchoSuppression').is(":checked"));
+            FWRecorder.setLoopBack($('#loopBack').is(":checked"));
+        }
+
+        function startAudioRecord() {
+            FWRecorder.observeLevel();
+            FWRecorder.record('audio', 'audio.wav')
+        }
+
+    </script>
+
+    <script>
+        function setRealMode(parameters) {
+            console.log("--- real mode ---");
+            // maximum allowed delay of live streaming
+            var delayTolerance = 300;  // milliseconds
+            // reconnect when the client doesn't receive any frame for this milliseconds
+            var mediaTimeout = 2000;  // milliseconds
+            //parameters.initialBufferTime = 0;  // buffer to fill before play begins
+            //parameters.expandedBufferTime = delayTolerance / 500;  // maximum buffer size
+            parameters.minContinuousPlayback = 0;  // minimum playback time without pausing
+            parameters.liveBufferTime = 0;  // buffer time for live content
+            parameters.streamType = 'live';
+            parameters.javascriptCallbackFunction = onPlayerEvent;
+            return parameters;
+        }
+
+        var originTime = null;    // system time for the media time zero
+        var timeoutTimer = null;  // timeout id
+
+        // called when a player event happened
+        function onPlayerEvent(playerId, eventName, eventObj) {
+            var player = null;        // Player object (element)
+            // grab the player object
+            if (player === null) {
+                player = document.getElementById(playerId);
+            }
+
+            if (eventName === 'timeupdate') {  // time information
+                if (isNaN(eventObj.currentTime)) {
+                    // ignore NaN
+                    return;
+                }
+                if (eventObj.currentTime === 0) {
+                    // ignore time zero
+                    return;
+                }
+                var currentMediaTime = eventObj.currentTime * 1000;
+                var now = new Date().getTime();
+                if (originTime === null) {
+                    originTime = now - currentMediaTime;
+                }
+                // calculate the media time from originTime
+                var projectedMediaTime = now - originTime;
+                var mediaTimeDiff = projectedMediaTime - currentMediaTime;
+                if (mediaTimeDiff > delayTolerance) {  // the delay exceeds tolerance
+                    // reload the stream
+                    player.pause();
+                    player.play2();
+                } else if (mediaTimeDiff < 0) {  // originTime was late
+                    // update originTime
+                    originTime = now - currentMediaTime;
+                }
+                scheduleMediaTimeout();
+            } else if (eventName === 'play') {  // play has begun
+                cancelMediaTimeout();
+                // reset originTime
+                originTime = null;
+            }
+        }
+        // cancel the media timeout
+        function cancelMediaTimeout() {
+            if (timeoutTimer !== null) {
+                clearTimeout(timeoutTimer);
+            }
+        }
+    </script>
+
+    <script type="text/javascript">
+        var parameters = {
+            src: "",
+            autoPlay: "false",
+            verbose: true,
+            controlBarAutoHide: "true",
+            controlBarPosition: "bottom",
+            poster: "http://52.78.115.124/xvs-api-js-demo/images/poster.png",
+            plugin_hls: "http://52.78.115.124/xvs-api-js-demo/swf/wmp_plugin_hls.swf"
+        };
+
+        function play(width, height) {
+            if (/^rtmp:\/\//.test(parameters.src)) {
+                //parameters = setRealMode(parameters);
+                console.log(parameters.src);
+            }
+
+            swfobject.embedSWF(
+                    "http://52.78.115.124/xvs-api-js-demo/swf/woan_wmp.swf",
+                    "woan_player",
+                    width,
+                    height,
+                    "10.1.0",
+                    "http://52.78.115.124/xvs-api-js-demo/expressInstall.swf",
+                    parameters,
+                    {
+                        allowFullScreen: "true",
+                        wmode: "opaque"
+
+                    },
+                    {
+                        name: "Woan_Player"
+                    }
+            );
+        }
+    </script>
+
+    <style>
+        .hero-unit {
+            padding: 15px;
+            top-padding: 15px;
+        }
+        select {
+            width: 100px;
+        }
+        input {
+            width: 100px;
+        }
+        .form-horizontal .control-group {
+            margin-bottom: 5px;
+        }
+        .form-horizontal .controls {
+            margin-left: 100px;
+            width: 100px;
+        }
+        .form-horizontal .control-label {
+            width: 90px;
+        }
+
+        h1 a { color: red; text-decoration: none; }
+        .container {
+            margin: 10px ;
+            background-color: #f4f4f4;
+            padding-top: 25px;
+            padding: 20px;
+            font-family: sans-serif;
+            border-radius: 22px;
+        }
+        .control_panel {
+            white-space: nowrap;
+            padding: 0;
+            margin: 2px;
+            vertical-align: middle;
+            height: 24px;
+            background-color: #e7e7e7;
+            position: relative;
+        }
+        .control_panel a { outline: none; display: inline-block; width: 24px; height: 24px; text-decoration: none; }
+        .control_panel a img { border: 0; padding: 0; margin: 0;}
+        .control_panel .level {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background: linear-gradient(to right, #8bb300 0%, #3b9d00 100%);
+        }
+        .details { font-size: 12px; }
+        #save_button { padding: 0; margin: 0; }
+        .play_button { display: inline-block; }
+        .pause_button { display: inline-block; }
+        .mic_config ul, .mic_config li { list-style: none; margin: 0; padding: 0; font-size: 12px}
+
+        .scroll {
+            width: 95%;                                     /*宽度*/
+            color: ;                                        /*颜色*/
+            font-family: ;                                  /*字体*/
+            padding-left: 10px;                             /*层内左边*/
+            padding-right: 10px;                            /*层内右边*/
+            padding-top: 10px;                              /*层内上边*/
+            padding-bottom: 10px;                           /*层内下边*/
+            overflow-x: auto;                             /*横向滚动scroll:始终出现;auto:必要时出具体参考CSS文档)*/
+            overflow-y: auto;                             /*竖向滚动板*/
+
+            scrollbar-face-color: #D4D4D4;                  /*滚动条滑块颜*/
+            scrollbar-hightlight-color: #ffffff;                /*滚动界面的亮边颜*/
+            scrollbar-shadow-color: #919192;                    /*滚动D界面的暗边颜*/
+            scrollbar-3dlight-color: #ffffff;               /*滚动条亮边框颜色*/
+            scrollbar-arrow-color: #919192;                 /*箭头颜色*/
+            scrollbar-track-color: #ffffff;                 /*滚动条底*/
+            scrollbar-darkshadow-color: #ffffff;                /*滚动条暗边框颜色*/
+        }
+
+    </style>
+
+    <script language="javascript">
+
+        var iplayer = null;
+        var player_style = null;
+        function call_player(file_name, width, height) {
+            if (player_style == null) {
+                player_style = $("#woan_player").attr("style");
+            }
+            if (is_ios) {
+                player_style = "display: block; width: 280; height: 210px"
+            }
+            if (detectFlashInstalled()) {
+                if (iplayer != null) {
+                    iplayer.stop();
+                }
+                parameters.src = file_name;
+                parameters.autoPlay = true;
+                play(width, height);
+            } else if (/\.m3u8/.test(file_name)) {
+                if (is_ios || isSafari()) {
+                    iplayer = null;
+                    $("#woan_player").replaceWith('<video id="woan_player" autoplay controls style="' + player_style + '" src="' + file_name+ '"></video>');
+                    $("#woan_player").load();
+                    $("#woan_player").play();
+                } else if (detectFlashInstalled()) {
+                    parameters.autoPlay = true;
+                    parameters.src = file_name;
+                    console.log(parameters.src);
+                    play(width, height);
+                }
+            }
+        }
+
+        function cancel_task(task_id) {
+            var query_string = "task_id="+task_id;
+            var uri = '/action/cancel_task';
+            var now = new Date().format("yyyy-MM-ddThh:mm:ss +0000");
+            var signature = make_signature(uri, query_string, now, TASK_ACTION_KEY);
+            $.ajax({
+                url: uri + (query_string ? "?" : "") + query_string,
+                headers: {"xvs-timestamp" : now, "xvs-signature": signature},
+                dataType: "jsonp",
+                success: function(data) {
+                    if (data.ret) {
+                        alert("取消任务 " + task_id + " 失败, ret=" + data.ret);
+                    }
+                },
+                error: function() {
+                    alert("调用取消任务接口失败");
+                }
+            });
+        }
+
+        function isSafari() {
+            return Object.prototype.toString.call(window.HTMLElement).indexOf('Constructor') > 0;
+        }
+
+        function detectFlashInstalled() {
+            var hasFlash = false;
+            try {
+                var fo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash');
+                if (fo) {
+                    hasFlash = true;
+                }
+            } catch (e) {
+                if (navigator.mimeTypes
+                        && navigator.mimeTypes['application/x-shockwave-flash'] != undefined
+                        && navigator.mimeTypes['application/x-shockwave-flash'].enabledPlugin) {
+                    hasFlash = true;
+                }
+            }
+            return hasFlash;
+        }
+
+        function query_online_user_list() {
+            //setTimeout(update_user_status, 6000);
+            var query_string = '';
+            var uri = '/manager/info/online_user_list';
+            var now = new Date().format("yyyy-MM-ddThh:mm:ss +0000");
+            var signature = make_signature(uri, query_string, now, QUERY_KEY);
+            $.ajax({
+                url: uri + (query_string ? "?" : "") + query_string,
+                headers: {"xvs-timestamp" : now, "xvs-signature": signature},
+                dataType: "jsonp",
+                success: function(data) {
+                    if (data.ret) {
+                        return;
+                    }
+
+                    if (data.list.length >0) {
+                        $('#select_user_tip').text("请从下面列表中选择接收消息的用");
+                    }
+                    var dst_user_array = [];
+                    var fresh_user_array = [];
+                    $('.dst_user_name').each(function(idx, ele) {
+                        dst_user_array.push($(this).attr('data'));
+                    });
+                    for (item in data.list) {
+                        fresh_user_array.push(data.list[item].user_name);
+                        if (-1 == $.inArray(data.list[item].user_name, dst_user_array)) {
+                            $("#online_user_list").append('<lable> <input name="dst_user_name" class="dst_user_name" type="radio" onclick="onDstUserChange();" data="' + data.list[item].user_name +'"></input>' + data.list[item].user_name + '</label>');
+                        }
+                    }
+
+                    $(".dst_user_name").each(function(idx,ele) {
+                        if (-1 == $.inArray($(this).attr('data'), fresh_user_array)) {
+                            $(this).parent().remove();
+                        }
+                    });
+                    if (0 == data.list.length) {
+                        $('#select_user_tip').text("当前无在线用无法发送语音消");
+                    }
+                }
+            });
+            //setTimeout(query_online_user_list, 1000);
+        }
+
+        /**
+         * 时间对象的格式化;
+         */
+        Date.prototype.format = function(format) {
+            /*
+             * eg:format="yyyy-MM-dd hh:mm:ss";
+             */
+            var o = {
+                "M+" : this.getUTCMonth() + 1, // month
+                "d+" : this.getUTCDate(), // day
+                "h+" : this.getUTCHours(), // hour
+                "m+" : this.getUTCMinutes(), // minute
+                "s+" : this.getUTCSeconds(), // second
+                "q+" : Math.floor((this.getMonth() + 3) / 3), // quarter
+                "S" : this.getMilliseconds()
+                // millisecond
+            }
+
+            if (/(y+)/.test(format)) {
+                format = format.replace(RegExp.$1, (this.getFullYear() + "").substr(4
+                        - RegExp.$1.length));
+            }
+
+            for (var k in o) {
+                if (new RegExp("(" + k + ")").test(format)) {
+                    format = format.replace(RegExp.$1, RegExp.$1.length == 1
+                            ? o[k]
+                            : ("00" + o[k]).substr(("" + o[k]).length));
+                }
+            }
+            return format;
+        }
+
+        function make_signature(uri, query_string, now, key) {
+            var data = uri + query_string + now;
+            return CryptoJS.HmacSHA256(data, key);
+        }
+
+        function query_stream_list() {
+            var query_string = ""
+            var uri = 'http://52.78.115.124/manager/info/task_list';
+            /*请注意，这里获取的是UTC时间，即零时区时*/
+            var now = new Date().format("yyyy-MM-ddThh:mm:ss +0000");
+            var signature = make_signature(uri, query_string, now, QUERY_KEY);
+            $.ajax({
+                url: uri + (query_string ? "?" : "") + query_string,
+                headers: {"xvs-timestamp" : now, "xvs-signature": signature},
+                dataType: "jsonp",
+                success: function(data) {
+                    if (data.ret) {
+                        alert('获取直播列表失败 ret=' + data.ret);
+                        return;
+                    }
+                    $('#list').empty();
+                    if (0 == data.list.length) {
+                        $('#list-block').addClass('hide');
+                        if (iplayer) {
+                            $("#player").attr('href', '');
+                            iplayer.stop();
+                        }
+                        return;
+                    }
+                    for (var i = 0; i < data.list.length; i++) {
+                        var play_uri = null;
+                        var task = data.list[i];
+                        var cancel_button_txt = '';
+                        if (is_console) {
+                            var cancel_button_txt = '<button class="cancel btn btn-danger" data="' + task.task_id + '" >停止</button>';
+                        }
+                        var progress = '直播';
+                        if (task.progress > 0) {
+                            progress = '进度' + (task.progress * 100).toFixed(0) + '%';
+                        }
+                        if (is_ios) {
+                            progress = '';
+                        }
+                        var tr = '<tr><td>输入'+ (task.sequence+1) + '</td><td>' + task.service_code+ '</td><td>'+ progress +'</td><td>' + task.input_bytes +
+                                '</td><td>'+cancel_button_txt+'</td></tr>';
+                        for (var j = 0; j < task.outputs.length; j++) {
+                            var output = task.outputs[j];
+                            if (null == output) {
+                                continue;
+                            }
+                            var live_url = null;
+                            if (detectFlashInstalled()) {
+                                var port_str = "";
+                                if ($(location).attr('port')) {
+                                    port_str = ":" + $(location).attr('port');
+                                }
+                                switch(output.format) {
+                                    case 'flv':
+                                        live_url = 'http://52.78.115.124/' + '/live/id/' + output.file_name;
+                                        break;
+                                    case 'rtmp':
+                                        live_url = 'rtmp://52.78.115.124/'  + ":1935/live/" + output.file_name;
+                                        break;
+                                    case 'm3u8':
+                                        live_url = 'http://52.78.115.124/'  + output.relative_dir + output.file_name;
+                                        break;
+                                    default:
+                                }
+                            } else if (is_ios || isSafari()) {
+                                if ('m3u8' == output.format) {
+                                    live_url = output.relative_dir + 'l_' + output.file_name;
+                                }
+                            }
+                            var play_btn = '';
+                            if (live_url) {
+                                play_btn = '<button  class="play btn btn-primary"  data-url="' + live_url + '" data-width="'+output.width+'" data-height="'+output.height+'">播放</button>';
+                            }
+                            var danmu_btn = '';
+                            if (output.danmu && output.danmu.length>0) {
+                                danmu_btn = '<button  class="danmu play btn" data-task-id="' + task.task_id + '" data-output-index="' + j + '" data-text-channel-num="' + output.danmu.length + '"> 弹幕</button>';
+                            }
+                            tr += '<tr><td></td><td>输出'+(j+1)+' </td><td> ' + output.format + '</td><td>'+play_btn+'</td><td>'+danmu_btn+'</td><td td class="hidden-phone">' + output.width + 'x' + output.height + '</td><td class="hidden-phone">' + output.file_name + '</td></tr>';
+                        }
+                        $('#list').append($(tr));
+                    }
+
+                    $('button.play').click(function() {
+                        call_player($(this).attr('data-url'), $(this).attr('data-width'), $(this).attr('data-height'));
+                    });
+
+                    $('button.danmu').click(function() {
+                        $('#send_danmu_btn').attr('data-task-id', $(this).attr('data-task-id'));
+                        $('#send_danmu_btn').attr('data-output-index', $(this).attr('data-output-index'));
+                        var channel_num = $(this).attr('data-text-channel-num');
+                        var channel_html = '';
+                        for (var i = 0; i < channel_num; i++) {
+                            channel_html += '<input type="radio" name="danmu_channel" value="'+i+'" />通道' + i;
+                        }
+                        $('#text_channels').html(channel_html);
+                        $(":radio[name='danmu_channel']:first").attr("checked", "checked");
+                        $('#danmu_model').modal();
+                    });
+
+
+                    $('button.cancel').click(function() {
+                        cancel_task($(this).attr('data'));
+                    });
+                },
+                error: function() {
+                    return;
+                }
+            });
+            setTimeout(query_stream_list, 5000);
+        }
+
+        $(document).ready(function() {
+            query_stream_list();
+            query_online_user_list();
+
+            if (!detectFlashInstalled() || !is_console) {
+                $('#send_audio_control').hide();
+            }
+
+            $("#btn_create_task").click(function() {
+                var url = "/action/create_task";
+                url += "&output_tag=" + $("#txt_output_tag").val();
+                var val = $("#txt_input_file_name").val();
+                if (val) {
+                    url += "&input_file_name=" + val;
+                }
+                val = $("#txt_output_file_name").val();
+                if (val) {
+                    url += "&output_file_name=" + val;
+                }
+                $.ajax({
+                    type: 'POST',
+                    url: url,
+                    success: function(json_data) {
+                        alert("ret: " + json_data.ret + ", task_id:" + json_data.task_id);
+                    }
+                });
+            });
+
+
+            $("#btn_create_task_with_conf").click(function() {
+                var uri = "/action/create_task_with_conf";
+                var query_string = "config=" + encodeURIComponent($("#task_xml_text").val());
+                /*请注意，请看format函数的实现，其中获取的是UTC时间，即零时区时*/
+                var now = new Date().format("yyyy-MM-ddThh:mm:ss +0000").toString();
+                var signature = make_signature(uri, query_string, now, TASK_ACTION_KEY).toString();
+                $.ajax({
+                    type: 'POST',
+                    url: uri + "?" + query_string,
+                    headers: {"xvs-timestamp" : now, "xvs-signature": signature},
+                    success: function(json_data) {
+                        alert("ret: " + json_data.ret + ", task_id:" + json_data.task_id);
+                    }
+                });
+            });
+
+            $("#btn_send_msg").click(function() {
+                var val =  $("#txt_dst_user_name").val();
+                var query_string;
+                if (val) {
+                    query_string = "dst_username=" + val;
+                } else {
+                    alert('请输入接收消息的用户');
+                    return;
+                }
+                var val =  $("#txt_message").val();
+                if (val) {
+                    /*注意，这里需要把需要发送的文本串做uri编码*/
+                    query_string += "&message=" + encodeURIComponent(val);
+                } else {
+                    alert('请输入要发送的消息内容');
+                    return;
+                }
+                var val =  $("#txt_sender").val();
+                if (val) {
+                    query_string += "&from_username=" + val;
+                } else {
+                    alert('输入发送者名');
+                    return;
+                }
+
+                var uri = "/action/send_txt_msg";
+                var now = new Date().format("yyyy-MM-ddThh:mm:ss +0000").toString();
+                var signature = make_signature(uri, query_string, now, SEND_MESSAGE_KEY).toString();
+                $.ajax({
+                    url: uri + "?" + query_string,
+                    headers: {"xvs-timestamp" : now, "xvs-signature": signature},
+                    success: function(data) {
+                        alert('发送消息API返回: ' + JSON.stringify(data));
+                    }
+                });
+            });
+
+            $('#send_danmu_btn').click(function() {
+                var task_id =  $(this).attr('data-task-id');
+                var output_index  = $(this).attr('data-output-index');
+                var text_channel_index = $(":radio[name='danmu_channel']:checked").val();
+                var uri = "/action/danmu";
+                query_string="task_id="+$(this).attr('data-task-id')+"&output_index="+$(this).attr('data-output-index')+"&text_index="+text_channel_index+"&text="+$('#danmu_text').val();
+                var now = new Date().format("yyyy-MM-ddThh:mm:ss +0000");
+                var signature = make_signature(uri, query_string, now, "danmu");
+                $.ajax({
+                    url: uri + "?" + query_string,
+                    headers: {"xvs-timestamp" : now, "xvs-signature": signature},
+                    success: function(json_data) {
+                        console.log("ret: " + json_data.ret);
+                    }
+                });
+            });
+        });
+
+        /*
+         * 由main4record.js中recording_stopped事件回调
+         */
+        function onDstUserChange() {
+            var uri = "/action/send_audio_msg";
+            var query_string = "";
+            var action = "/action/send_audio?service_code=jnj&file_name=message.wav&dst_username="
+            var dst_user_name = '';
+            $('.dst_user_name').each(function() {
+                if ($(this).prop('checked')) {
+                    dst_user_name = $(this).attr('data');
+                }
+            });
+            var action_url = "";
+            var signature = null;
+            var now = null;
+            if ('' == dst_user_name) {
+                action_url = '';
+            } else {
+                var fname = new Date().format("yyyyMMddThhmmss") + '.wav';
+                query_string += "dst_username=" + dst_user_name+"&opaque=()";
+                now = new Date().format("yyyy-MM-ddThh:mm:ss +0000").toString();
+                signature = make_signature(uri, query_string, now, SEND_MESSAGE_KEY).toString();
+                action_url = uri + "?" + query_string;
+            }
+            FWRecorder.recorder.init(action_url, "upload_file[filename]", $("#uploadForm").serializeArray(), signature, now);
+        }
+
+
+    </script>
+</head>
+<body>
+<div id="danmu_model" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="" style="margin:10px;" align="center">
+        <label>选择通道: </label>
+        <div id="text_channels"></div>
+        <label>输入弹幕文本: </label>
+        <textarea id="danmu_text" rows="7" style="clear: both; width:60%; "></textarea>
+        <button id="send_danmu_btn">发</button>
+    </div>
+</div>
+<div align="center">
+    <h1><img src="http://o7y189er1.bkt.clouddn.com/phone2.png" /> 123  5456 8976</h1>
+    <div id="woan_player"></div>
+    <div class="scroll" style="clear: both; ;margin-top: 10px; ">
+        <table id="list" class="table table-hover" style="width: 100%;"  >
+        </table>
+    </div>
+
+    <div id="send_audio_control" class="span3" style="margin:0 auto; float:none;">
+        <h4>发送语</h4>
+        <div>
+            <p id="select_user_tip" style="font-size: 12px;">请从以下列表选择接收语音消息的用 </p>
+            <form id="online_user_list">
+            </form>
+        </div>
+        <div class="control_panel audio">
+        <span id="save_button">
+          <span id="flashcontent" >
+            <p>请安装flash插件</p>
+          </span>
+        </span>
+            <a class="play_button" style="display:none;" onclick="FWRecorder.playBack('audio');" href="javascript:void(0);" title="Play">
+                <img src="images/play.png" width="24" height="24" alt="Play"/>
+            </a>
+            <a class="pause_button" style="display:none;" onclick="FWRecorder.pausePlayBack('audio');" href="javascript:void(0);" title="Pause">
+                <img src="images/pause.png" width="24" height="24" alt="Pause"/>
+            </a>
+            <div class="level"></div>
+        </div>
+
+        <div class="details">
+            <button class="hide_level" onclick="FWRecorder.stopObservingLevel();" style="display: none;">Hide Level</button>
+            <div id="status">
+                录制状
+            </div>
+            <div>时长: <span id="duration"></span></div>
+            <div>活动水平: <span id="activity_level"></span></div>
+            <div>发送状 <span id="upload_status"></span></div>
+        </div>
+
+        <form id="uploadForm" name="uploadForm" action=''>
+            <input name="authenticity_token" value="xxxxx" type="hidden">
+            <input name="upload_file[parent_id]" value="1" type="hidden">
+            <input name="format" value="json" type="hidden">
+        </form>
+
+
+        <h4>配置麦克</h4>
+        <form class="form-horizontal" style="align:left;" onsubmit="return false;">
+            <div class="control-group">
+                <label for="rate" class="control-label">采样</label>
+                <div class="controls">
+                    <select id="rate" name="rate">
+                        <option value="44" selected>44,100 Hz</option>
+                        <option value="22">22,050 Hz</option>
+                        <option value="11">11,025 Hz</option>
+                        <option value="8">8,000 Hz</option>
+                        <option value="5">5,512 Hz</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="gain" class="control-label">音量增益</label>
+                <div class="controls">
+                    <select id="gain" name="gain">
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="silenceLevel" class="control-label">静音侦测级别</label>
+                <div class="controls">
+                    <select id="silenceLevel" name="silenceLevel"> </select>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="silenceTimeout" class="control-label">静音超时 </label>
+                <div class="controls">
+                    <input id="silenceTimeout" name="silenceTimeout" value="2000"/>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="useEchoSuppression" class="control-label">启用回声抑制</label>
+                <div class="controls">
+                    <input id="useEchoSuppression" name="useEchoSuppression" type="checkbox"/>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <button onclick="configureMicrophone();" class="btn btn-primary">提交配置</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+<script type="text/javascript" src="./js/websocket.js"></script>
+</html>
+
