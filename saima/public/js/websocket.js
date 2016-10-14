@@ -22,11 +22,15 @@ socket.on('open',function(){
 
 socket.on('status',function(msg){
     if(msg==="error"){
+        $.cookie('user_id',null);
+        $.cookie('name',null);
         window.location.href='/login'
     }
 });
 
 socket.on("user_id_"+u_id,function(msg){
+    $.cookie('user_id',null);
+    $.cookie('name',null);
     window.location.href='/login'
 });
 
