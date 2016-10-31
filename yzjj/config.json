@@ -1,0 +1,22 @@
+{
+  "listen_port" : 9000,
+  "db_pool_config":{
+    "connectionLimit":5,
+    "host": "101.200.113.40",
+    "user"     : "root",
+    "password" : "zFpVu4JmPZSIfbLa",
+    "database" : "yzjj",
+    "port":3306
+  },
+  "sms_config":{
+     "appkey":"23499658",
+    "appsecret":"51e2b731ef4054b495ac8cc9cfeda1db",
+    "REST_URL":"http://gw.api.taobao.com/router/rest"
+  },
+  "redis_config":{
+    "appkey":"23499658",
+    "appsecret":"51e2b731ef4054b495ac8cc9cfeda1db",
+    "REST_URL":"http://gw.api.taobao.com/router/rest"
+  }
+}
+
