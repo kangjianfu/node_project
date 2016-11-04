@@ -1,0 +1,11 @@
+
+{
+    "SERVER_MIDDLEWARE_ERROR":"中间件异常",
+    "SERVER_DB_ERROR":"数据库异常，连接错误",
+    "SERVER_NET_ERROR":"网络异常，稍后重试",
+    "RESULT_OK":"返回正常",
+    "FA_USER_NOTEXIST":"登录失败，用户不存在",
+    "FA_PARAM_INVALID":"参数异常，请重试",
+    "RESULT_NOT_API":"没有此连接"
+
+}
