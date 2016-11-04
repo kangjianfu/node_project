@@ -1,7 +1,7 @@
 /**
  * Created by lv-juan on 2016/10/30.
  */
-var formidable=require('formidable');
+var log = require("../log").logger("login"); // logger中的参数随便起
 var path=require("path");
 var mysql = require('mysql');
 const config = require('../config.json');
@@ -51,27 +51,25 @@ module.exports.send_phone_msg_by_register=function(req,res){
                     },
                     function (error, sms_response) {
                         if(error) {
-                            console.info('发送验证码失败。 ' + error);
+                            log.error('发送验证码失败。 ' + error);
                             res.json({ret:4,msg:"获取太频繁，请稍候。"})
                         } else {
-                            console.info("验证码发送成功");
-                            console.info(sms_response);
+                            log.info("验证码发送成功",+"......"+sms_response);
                             pool.getConnection(function(err,connection){
                                 if (err) {
                                     connection.release();
                                     return;
                                 }
-                                console.log('当前线程Id ' + connection.threadId);
                                 connection.query('call save_phone_msg("'+phone+'","'+sms_code+'")',function(err,rows){
                                     connection.release();
                                     if(err) {
-                                        console.info(err);
+                                        log.error('调用保存手机号码失败，数据库异常。 ' + err);
                                     }else{
-                                        console.info("验证码保存到数据库。。。。。。。。。。"+JSON.stringify(rows));
+                                        log.info('验证码保存到数据库。。。。。。。。。。' + JSON.stringify(rows));
                                     }
                                 });
                                 connection.on('error', function(err) {
-                                    console.info(err);
+                                    log.error('数据库异常。 ' + err);
                                 });
                             });
                             res.json({ret:0})
@@ -90,16 +88,15 @@ module.exports.send_phone_msg_by_register=function(req,res){
 function check_phone_exist(phone,callback){
     pool.getConnection(function(err,connection){
         if (err) {
-            console.info(err);
+            log.error('数据库异常。 ' + err);
             connection.release();
             callback({ret:1,msg:"网络异常"},null);
             return;
         }
-        console.log('当前线程Id ' + connection.threadId);
         connection.query('select count(*) as count from customer where phone ="'+phone+'"',function(err,rows){
             connection.release();
             if(err) {
-                console.info(err);
+                log.error('数据库异常。 ' + err);
                 callback({ret:1,msg:"网络异常"},null);
             }else{
                 console.info("查询结果。。。。。。。。。。"+JSON.stringify(rows));
@@ -107,7 +104,7 @@ function check_phone_exist(phone,callback){
             }
         });
         connection.on('error', function(err) {
-            console.info(err);
+            log.error('数据库异常。 ' + err);
             callback({ret:1,msg:"网络异常"},null);
         });
     });
@@ -131,15 +128,14 @@ module.exports.register_customer_account=function(req,res){
             pool.getConnection(function(err,connection){
                 if (err) {
                     connection.release();
+                    log.error('数据库异常。 ' + err);
                     res.json({ret:2,msg:"服务异常"})
-                    //res.json({"code" : 100, "status" : "Error in connection database"});
                     return;
                 }
-                console.log('当前线程Id ' + connection.threadId);
                 connection.query('call register_customer_account("'+phone+'","'+password+'","'+code+'")',function(err,rows){
                     connection.release();
                     if(err) {
-                        console.info(err)
+                        log.error('数据库异常。 ' + err);
                         res.json({ret:1})
                     }else{
                         var msg_code=rows[0][0]._result;
@@ -165,7 +161,7 @@ module.exports.register_customer_account=function(req,res){
                     }
                 });
                 connection.on('error', function(err) {
-                    console.info(err)
+                    log.error('数据库异常。 ' + err);
                     res.json({ret:1});
                     return;
                 });
@@ -189,17 +185,17 @@ module.exports.user_login=function(req,res){
             pool.getConnection(function(err,connection){
                 if (err) {
                     connection.release();
+                    log.error('数据库异常。 ' + err);
                     res.json({ret:2,msg:"服务异常"})
                     return;
                 }
-                console.log('当前线程Id ' + connection.threadId);
                 connection.query('select * from customer where phone="'+phone+'" and password="'+password+'" ',function(err,rows){
                     connection.release();
                     if(err) {
-                        console.info(err)
+                        log.error('数据库异常。 ' + err);
                         res.json({ret:9,msg:"网络异常"})
                     }else{
-                        console.info(JSON.stringify(rows))
+                        log.info('查询成功。 ' + JSON.stringify(rows));
                         if(rows[0]){
                             res.json({ret:0})
                         }else{
@@ -208,6 +204,7 @@ module.exports.user_login=function(req,res){
                     }
                 });
                 connection.on('error', function(err) {
+                    log.error('链接数据库异常。 ' + err);
                     res.json({ret:1});
                     return;
                 });
@@ -242,13 +239,14 @@ module.exports.send_phone_msg_by_update_pwd=function(req,res){
                     },
                     function (error, sms_response) {
                         if(error) {
-                            console.info('发送验证码失败。 ' + error);
+                            log.error('发送验证码失败。 ' + error);
                             res.json({ret:4,msg:"获取太频繁，请稍候。"})
                         } else {
                             console.info("验证码发送成功");
                             console.info(sms_response);
                             pool.getConnection(function(err,connection){
                                 if (err) {
+                                    log.error('数据库异常。 ' + err);
                                     connection.release();
                                     return;
                                 }
@@ -256,13 +254,14 @@ module.exports.send_phone_msg_by_update_pwd=function(req,res){
                                 connection.query('call save_phone_msg("'+phone+'","'+sms_code+'")',function(err,rows){
                                     connection.release();
                                     if(err) {
-                                        console.info(err);
+                                        log.error('数据库异常。 ' + err);
                                     }else{
-                                        console.info("验证码保存到数据库。。。。。。。。。。"+JSON.stringify(rows));
+                                        log.info("验证码保存到数据库。。。。。。。。。。"+JSON.stringify(rows));
                                     }
                                 });
                                 connection.on('error', function(err) {
-                                    console.info(err);
+                                    log.error('数据库异常。 ' + err);
+
                                 });
                             });
                             res.json({ret:0})
@@ -295,11 +294,10 @@ module.exports.save_update_customer_pwd=function(req,res){
             pool.getConnection(function(err,connection){
                 if (err) {
                     connection.release();
+                    log.error('数据库异常。 ' + err);
                     res.json({ret:2,msg:"服务异常"})
-                    //res.json({"code" : 100, "status" : "Error in connection database"});
                     return;
                 }
-                console.log('当前线程Id ' + connection.threadId);
                 connection.query('call update_customer_pwd("'+phone+'","'+password+'","'+code+'")',function(err,rows){
                     connection.release();
                     if(err) {
@@ -329,7 +327,7 @@ module.exports.save_update_customer_pwd=function(req,res){
                     }
                 });
                 connection.on('error', function(err) {
-                    console.info(err)
+                    log.error('数据库异常。 ' + err);
                     res.json({ret:1});
                     return;
                 });
@@ -352,13 +350,11 @@ module.exports.back_login= function (req,res) {
                 res.json({"code" : 100, "status" : "Error in connection database"});
                 return;
             }
-            console.log('connected as id ' + connection.threadId);
             connection.query('select * from sys_admin where user_name="'+name+'" and password ="'+pwd+' " ',function(err,rows){
                 connection.release();
                 if(!err) {
                     console.info(JSON.stringify(rows))
                     if(rows[0]){
-                        //res.cookie('name', rows[0].user_name);
                         res.json({ret:0,username:rows[0].user_name})
                     }else{
                         res.json({ret:1})
@@ -368,8 +364,7 @@ module.exports.back_login= function (req,res) {
                 }
             });
             connection.on('error', function(err) {
-                //res.json({"code" : 100, "status" : "Error in connection database"});
-                console.info("数据库连接错误。。。。")
+                log.info("数据库连接错误。。。。")
                 res.json({ret:1})
                 return;
             });
@@ -382,6 +377,9 @@ module.exports.user_list_json=function(req,res){
     var pageIndex=req.query.page||1;
     pageIndex-=1;
     var row=req.query.rows||20;
+    if(pageIndex>1){
+        pageIndex=pageIndex*row
+    }
     getCount("customer",function(err,total){
         if(err){
             console.info(err);
@@ -391,18 +389,18 @@ module.exports.user_list_json=function(req,res){
             if (err) {
                 connection.release();
                 // res.json({"code" : 100, "status" : "Error in connection database"});
-                console.info("数据库连接异常")
-                res.json({total:0,rows:[]})
+                log.error('数据库异常。 ' + err);
+                res.json({total:0,rows:[]});
                 return;
             }
-            connection.query("select id,phone,create_time from customer order by create_time desc  limit "+pageIndex+","+row+"  ",function(err,rows){
+            connection.query("select id,phone,create_time,name from customer order by create_time desc  limit "+pageIndex+","+row+"  ",function(err,rows){
                 connection.release();
                 if(!err) {
                     res.json({total:total,rows:rows});
                 }
             });
             connection.on('error', function(err) {
-                console.info("数据库连接异常")
+                log.error('数据库异常。 ' + err);
                 res.json({total:0,rows:[]})
                 return;
             });
@@ -416,24 +414,60 @@ module.exports.user_list_json=function(req,res){
 function getCount(tableName,callbck){
     pool.getConnection(function(err,connection){
         if (err) {
-            console.info("Error in connection database");
+            log.error('数据库异常。 ' + err);
             connection.release();
             callback("Error in connection database");
         }
         connection.query("select count(*) as num  from "+tableName+" ",function(err,rows){
             connection.release();
             if(!err) {
-                console.info(rows)
+                log.info(rows)
+
                 callbck(null,rows[0].num)
             }else{
-                console.info(err)
+                log.error('数据库异常。 ' + err);
                 callbck(err)
             }
         });
         connection.on('error', function(err) {
-            console.log(err);
-            console.log("Error in connection database");
+            log.error('数据库异常。 ' + err);
             callbck("Error in connection database")
         });
     });
+}
+
+//后台登录
+module.exports.back_sigin= function (req,res) {
+    var name=req.body.name;
+    var pwd=req.body.password;
+    if(name&&pwd){
+        pool.getConnection(function(err,connection){
+            if (err) {
+                connection.release();
+                res.json({"code" : 100, "status" : "Error in connection database"});
+                return;
+            }
+            console.log('connected as id ' + connection.threadId);
+            connection.query('select * from sys_admin where user_name="'+name+'" and password ="'+pwd+' " ',function(err,rows){
+                connection.release();
+                if(!err) {
+                    if(rows[0]){
+                        res.cookie('name', rows[0].user_name);
+                        res.json({ret:0,username:rows[0].user_name})
+                    }else{
+                        res.json({ret:1})
+                    }
+                }else{
+                    res.json({ret:1})
+                }
+            });
+            connection.on('error', function(err) {
+                console.info("数据库连接错误。。。。")
+                res.json({ret:1})
+                return;
+            });
+        });
+    }else{
+        res.json({ret:1,msg:"参数异常"})
+    }
 }
